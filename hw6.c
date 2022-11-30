@@ -24,7 +24,7 @@ void printer(int cycle_num, char mips[5][128], char stages[7][4], int line, int*
     return;
 }
 
-void remake(int line, int** pipeline, int haz_line, int cycle) {
+void remake(int line, int** pipeline, int haz_line) {
     int** temp_pipe;
     int y;
     int z;
@@ -57,6 +57,17 @@ int line_finish(int* segment) {
     return 0;
 }
 
+int star_count(int* segment) {
+    int b;
+    int count = 0;
+    for (b = 0; b < 9; b++) {
+        if (segment[a] == 6) {
+            count++;
+        }
+    }
+    return count;
+}
+
 
 void update(int line, int** pipeline, int cycle,int hazard, int haz_line) {
     int x;
@@ -72,9 +83,22 @@ void update(int line, int** pipeline, int cycle,int hazard, int haz_line) {
         }
     }
     else {
-        remake(line,pipeline,haz_line,cycle);
+        remake(line,pipeline,haz_line);
         for (x = 0; x < 9; x++) {
             pipeline[haz_line][x] = pipeline[haz_line+1][x];
+        }
+        for (x = 0; x < haz_line; x++) {
+            if (line == x) break;
+            if (line_finish(pipeline[x]) == 1) {
+                continue;
+            }
+            else {
+                pipeline[x][cycle] = pipeline[x][cycle-1] + 1;
+            }
+        }
+        pipeline[haz_line][cycle] = 6;
+        for (x = haz_line + 1; x < line; x++) {
+            pipeline[x][cycle] = pipeline[x][cycle-1];
         }
         
 
@@ -167,16 +191,16 @@ int main(int argc, char* argv[]) {
             printer(cycle_num, mips_code, stages, line, pipeline);
         }
         else if (cycle_num == 1) { //second cycle
-            update(line,pipeline,cycle_num,0,haz_line);
+            update(line,pipeline,cycle_num,i,haz_line);
             printer(cycle_num, mips_code, stages, line, pipeline);
         }
         else if (cycle_num == 2) { //third cycle
-            update (line,pipeline,cycle_num,0,haz_line);
+            update (line,pipeline,cycle_num,i,haz_line);
             printer(cycle_num, mips_code, stages, line, pipeline);
         }
         else if (cycle_num == 3) { //fourth cycle
             if (haz1[1] == -1 && haz2[1] == -1) {
-                update(line,pipeline,cycle_num,0,haz_line);
+                update(line,pipeline,cycle_num,i,haz_line);
                 printer(cycle_num, mips_code, stages, line, pipeline);
             }
             else {
@@ -186,7 +210,7 @@ int main(int argc, char* argv[]) {
                 }
                 strncpy(mips_code[haz_line], "nop\t\t", sizeof(mips_code[haz_line]));
                 line++;
-                update(line,pipeline,cycle_num,1,haz_line);
+                update(line,pipeline,cycle_num,j,haz_line);
                 printer(cycle_num, mips_code, stages, line, pipeline);
             }
 
